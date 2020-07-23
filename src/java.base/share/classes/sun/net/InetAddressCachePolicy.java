@@ -31,6 +31,7 @@ import java.security.Security;
 public final class InetAddressCachePolicy {
 
     // Controls the cache policy for successful lookups only
+    //正向查找成功后的缓存策略
     private static final String cachePolicyProp = "networkaddress.cache.ttl";
     private static final String cachePolicyPropFallback =
         "sun.net.inetaddr.ttl";
@@ -56,7 +57,7 @@ public final class InetAddressCachePolicy {
      * caching. For security reasons, this caching is made forever when
      * a security manager is set.
      */
-    private static volatile int cachePolicy = FOREVER;
+    private static volatile int cachePolicy = FOREVER; //
 
     /* The Java-level namelookup cache policy for negative lookups:
      *
@@ -84,10 +85,12 @@ public final class InetAddressCachePolicy {
      * Initialize
      */
     static {
-
+        //初始化正向查找的缓存失效时间
         Integer tmp = java.security.AccessController.doPrivileged(
           new PrivilegedAction<Integer>() {
             public Integer run() {
+
+                //步骤一：优先读取networkaddress.cache.ttl参数
                 try {
                     String tmpString = Security.getProperty(cachePolicyProp);
                     if (tmpString != null) {
@@ -97,6 +100,7 @@ public final class InetAddressCachePolicy {
                     // Ignore
                 }
 
+                //步骤二：其次降级至匹配sun.net.inetaddr.ttl参数
                 try {
                     String tmpString = System.getProperty(cachePolicyPropFallback);
                     if (tmpString != null) {
@@ -110,12 +114,13 @@ public final class InetAddressCachePolicy {
           });
 
         if (tmp != null) {
-            cachePolicy = tmp < 0 ? FOREVER : tmp;
+            cachePolicy = tmp < 0 ? FOREVER /* 永久缓存 */: tmp /* 临时缓存 */;
             propertySet = true;
         } else {
             /* No properties defined for positive caching. If there is no
              * security manager then use the default positive cache value.
              */
+            //没有读到预定义的缓存失效时间，并且未使用到安全管理器，设置缓存有效期默认30秒
             if (System.getSecurityManager() == null) {
                 cachePolicy = DEFAULT_POSITIVE;
             }
